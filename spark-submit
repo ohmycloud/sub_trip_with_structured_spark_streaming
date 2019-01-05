@@ -1,0 +1,13 @@
+#!/bin/sh
+
+spark-submit \
+  --class ohmysummer.SubTrip \
+  --master local[2] \
+  --deploy-mode client \
+  --driver-memory 2g \
+  --driver-cores 2 \
+  --executor-memory 2g \
+  --executor-cores 2 \
+  --num-executors 4 \
+  target/sub_trip_with_structured_streaming-1.0-SNAPSHOT.jar
+  
