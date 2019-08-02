@@ -1,4 +1,4 @@
-package ohmysummer.model
+package com.gac.x9e.model
 
 /**
   * 行程信息
