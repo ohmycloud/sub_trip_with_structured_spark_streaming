@@ -52,6 +52,7 @@ object MainModule extends AbstractModule {
         SparkSession.builder
           .master(sparkConf.sparkMaster)
           .appName("Stateful Structured Streaming for x9e Nation")
+          .config("spark.sql.session.timeZone", "UTC")
           .getOrCreate()
       }
     }

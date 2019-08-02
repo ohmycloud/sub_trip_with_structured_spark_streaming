@@ -10,12 +10,11 @@ object NaSubTripImpl extends NaSubTrip {
   override def extract(spark: SparkSession, ds: Dataset[SourceData]): Dataset[TripUpdate] = {
     synchronized {
       import spark.implicits._
-      ds
+      ds.withWatermark("createTime", "30 seconds")
         .groupByKey(event => event.vin)
-        // .mapGroupsWithState(GroupStateTimeout.ProcessingTimeTimeout)(mappingFunction)
         .flatMapGroupsWithState(
           outputMode  = OutputMode.Update(),
-          timeoutConf = GroupStateTimeout.ProcessingTimeTimeout()
+          timeoutConf = GroupStateTimeout.EventTimeTimeout()
         )(func = mappingFunction)
     }
 
@@ -30,9 +29,9 @@ object NaSubTripImpl extends NaSubTrip {
     if (state.hasTimedOut) {
       state.remove() // 超时则移除
     } else if (state.exists) { // 状态存在
-      val sourceData = source.toArray.sortBy(_.createTime) // 按时间升序
+      val sourceData = source.toArray.sortBy(_.createTime.getTime) // 按时间升序
       for (s <- sourceData) {
-        if (s.createTime - state.get.tripEndTime > 5) {
+        if (s.createTime.getTime - state.get.tripEndTime > 5000) {
           val endTrip = TripUpdate(
             vin = vin,
             tripStartTime = state.get.tripStartTime,
@@ -48,8 +47,8 @@ object NaSubTripImpl extends NaSubTrip {
 
           // 初始化下一个行程
           val initTripInfo = TripInfo(
-            tripStartTime = s.createTime,
-            tripEndTime   = s.createTime,
+            tripStartTime = s.createTime.getTime,
+            tripEndTime   = s.createTime.getTime,
             startMileage  = s.mileage,
             endMileage    = s.mileage
           )
@@ -57,7 +56,7 @@ object NaSubTripImpl extends NaSubTrip {
         } else { // update
           val updateTripInfo = TripInfo(
             tripStartTime = state.get.tripStartTime,
-            tripEndTime   = s.createTime,
+            tripEndTime   = s.createTime.getTime,
             startMileage  = state.get.startMileage,
             endMileage    = s.mileage
           )
@@ -65,12 +64,12 @@ object NaSubTripImpl extends NaSubTrip {
         }
       }
     } else {
-      val sourceData = source.toArray.sortBy(_.createTime) // 按时间升序
+      val sourceData = source.toArray.sortBy(_.createTime.getTime) // 按时间升序
       val headData = sourceData.head // 第一条数据
       // 用第一条数据初始化一个状态
       val initTripInfo = TripInfo(
-        tripStartTime = headData.createTime,
-        tripEndTime   = headData.createTime,
+        tripStartTime = headData.createTime.getTime,
+        tripEndTime   = headData.createTime.getTime,
         startMileage  = headData.mileage,
         endMileage    = headData.mileage
       )
@@ -78,7 +77,7 @@ object NaSubTripImpl extends NaSubTrip {
 
 
       for (s <- sourceData.tail) {
-        if (s.createTime - state.get.tripEndTime > 5) { // end
+        if (s.createTime.getTime - state.get.tripEndTime > 5000) { // end
           val endTrip = TripUpdate(
             vin = vin,
             tripStartTime = state.get.tripStartTime,
@@ -94,8 +93,8 @@ object NaSubTripImpl extends NaSubTrip {
 
           // 初始化下一个行程
           val initTripInfo = TripInfo(
-            tripStartTime = s.createTime,
-            tripEndTime   = s.createTime,
+            tripStartTime = s.createTime.getTime,
+            tripEndTime   = s.createTime.getTime,
             startMileage  = s.mileage,
             endMileage    = s.mileage
           )
@@ -104,7 +103,7 @@ object NaSubTripImpl extends NaSubTrip {
         } else { // update
           val updateTripInfo = TripInfo(
             tripStartTime = state.get.tripStartTime,
-            tripEndTime   = s.createTime,
+            tripEndTime   = s.createTime.getTime,
             startMileage  = state.get.startMileage,
             endMileage    = s.mileage
           )
@@ -112,7 +111,7 @@ object NaSubTripImpl extends NaSubTrip {
         }
       }
 
-      state.setTimeoutDuration("30 seconds") // Set the timeout
+      state.setTimeoutTimestamp(30000) // Set the timeout
     }
 
     tripResult.iterator

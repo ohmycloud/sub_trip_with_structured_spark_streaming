@@ -7,7 +7,7 @@ import com.gac.x9e.module.MainModule
 import com.gac.x9e.pipeline.{EnSource, EnSparkSession, NaSource, NaSparkSession}
 import com.google.inject.{Guice, Inject, Singleton}
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.sql.streaming.{OutputMode, Trigger}
+import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import scopt.OptionParser
 
@@ -49,18 +49,15 @@ class SubTripApplication @Inject() (
                                      enAdapter:       EnAdapter
                                    ) extends Serializable {
   private def createNewStreamingQuery(params: Params): Unit = {
-    val sparkConf = new SparkConfiguration
-    val kafkaConf = new KafkaConfiguration
     val spark = naSparkSession.session()
+    spark.sparkContext.setLogLevel("WARN")
 
     val naAdapterDf = naAdapter.extract(spark, naSource.stream())
     val naSubTripDs = naSubTrip.extract(spark, naAdapterDf)
     val trips = naSubTripDs
-     // .withWatermark("createTime", "60 seconds")
       .writeStream
       .format("console")
       .option("truncate", "false")
-      .trigger(Trigger.ProcessingTime("10 seconds"))
       .outputMode(OutputMode.Update())
       .start
 
