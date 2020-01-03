@@ -11,7 +11,7 @@ package com.gac.x9e.model
   * @param tripDistance  行驶距离
   * @param tripStatus    行程状态
   */
-case class TripUpdate(
+case class TripSession(
   vin:               String,
   var tripStartTime: Long,
   var tripEndTime:   Long,
@@ -22,6 +22,6 @@ case class TripUpdate(
   var tripStatus:    Int
 )
 
-object TripUpdate {
+object TripSession {
 
 }

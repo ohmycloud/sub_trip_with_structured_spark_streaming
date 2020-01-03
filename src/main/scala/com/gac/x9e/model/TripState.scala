@@ -7,16 +7,12 @@ package com.gac.x9e.model
   * @param startMileage  开始里程数
   * @param endMileage    结束里程数
   */
-case class TripInfo(
+case class TripState(
   var tripStartTime: Long,
   var tripEndTime:   Long,
   var startMileage:  Long,
   var endMileage:    Long
-) {
-    def tripDuration: Long = tripEndTime - tripStartTime
-    def tripDistance: Long = endMileage  - startMileage
-  }
-
-object TripInfo {
-
+)  {
+  def tripDuration: Long = (tripEndTime - tripStartTime) / 1000
+  def tripDistance: Long = endMileage  - startMileage
 }

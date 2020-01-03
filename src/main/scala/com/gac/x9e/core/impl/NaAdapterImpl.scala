@@ -1,5 +1,6 @@
 package com.gac.x9e.core.impl
 
+import java.sql.Timestamp
 import com.alibaba.fastjson.JSON
 import com.gac.x9e.core.NaAdapter
 import com.gac.x9e.model.SourceData
@@ -30,7 +31,7 @@ object NaAdapterImpl extends NaAdapter {
 
         val data       = JSON.parseObject(line)
         val vin        = data.getString("vin")
-        val createTime = data.getTimestamp("createTime")
+        val createTime = new Timestamp( data.getLong("createTime"))
         val mileage    = data.getLong("mileage")
 
         // 将每行数据转换为 SourceData 数据源

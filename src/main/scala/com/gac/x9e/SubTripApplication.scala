@@ -1,10 +1,9 @@
 package com.gac.x9e
 
 import com.gac.x9e.SubTripApplication.Params
-import com.gac.x9e.conf.{KafkaConfiguration, SparkConfiguration}
-import com.gac.x9e.core.{EnAdapter, NaAdapter, NaSubTrip}
+import com.gac.x9e.core.{NaAdapter, NaSubTrip}
 import com.gac.x9e.module.MainModule
-import com.gac.x9e.pipeline.{EnSource, EnSparkSession, NaSource, NaSparkSession}
+import com.gac.x9e.pipeline.{NaSource, NaSparkSession}
 import com.google.inject.{Guice, Inject, Singleton}
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.streaming.OutputMode
@@ -14,10 +13,6 @@ import scopt.OptionParser
 object SubTripApplication extends App {
   val parser = new OptionParser[Params]("SubTripApplication") {
     head("SubTripApplication")
-
-    opt[String]('c', "conf")
-      .text("config.resource for x9e-gac")
-      .action((x, c) => c.copy(conf = x))
 
     opt[Int]('i', "interval")
       .text("config.resource for x9e-gac")
@@ -35,7 +30,7 @@ object SubTripApplication extends App {
     case _ => sys.exit(1)
   }
 
-  case class Params(conf: String = "", interval: Int = 360)
+  case class Params(interval: Int = 360)
 }
 
 @Singleton
@@ -43,10 +38,7 @@ class SubTripApplication @Inject() (
                                      naSparkSession:  NaSparkSession[SparkSession],
                                      naSource:        NaSource[DataFrame],
                                      naAdapter:       NaAdapter,
-                                     enSparkSession:  EnSparkSession[SparkSession],
-                                     naSubTrip:       NaSubTrip,
-                                     enSource:        EnSource[DataFrame],
-                                     enAdapter:       EnAdapter
+                                     naSubTrip:       NaSubTrip
                                    ) extends Serializable {
   private def createNewStreamingQuery(params: Params): Unit = {
     val spark = naSparkSession.session()

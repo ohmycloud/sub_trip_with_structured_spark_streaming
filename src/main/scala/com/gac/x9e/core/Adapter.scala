@@ -1,6 +1,6 @@
 package com.gac.x9e.core
 
-import com.gac.x9e.model.{SourceData, TripUpdate}
+import com.gac.x9e.model.{SourceData, TripSession}
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 
 // 企标数据适配
@@ -14,5 +14,5 @@ trait NaAdapter {
 }
 
 trait NaSubTrip {
-  def extract(spark: SparkSession, ds: Dataset[SourceData]): Dataset[TripUpdate]
+  def extract(spark: SparkSession, ds: Dataset[SourceData]): Dataset[TripSession]
 }
