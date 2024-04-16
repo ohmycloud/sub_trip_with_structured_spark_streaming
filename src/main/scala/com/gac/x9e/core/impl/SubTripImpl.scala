@@ -7,12 +7,14 @@ import org.apache.spark.sql.{Dataset, SparkSession}
 import scala.collection.mutable.ArrayBuffer
 
 object SubTripImpl extends SubTrip {
-  private val tripGapDuration = 30 * 1000L // 形成之间的 Gap 时间为 30秒
-  private val timeoutDuration = 30 * 1000L // 超时时间
+  private val tripGapDuration = 30 * 1000L    // 形成之间的 Gap 时间为 30秒
+  private val timeoutDuration = 30 * 1000L    // 超时时间
+  private val waterMarkDuration = "5 minutes" // 水位
+
   override def extract(spark: SparkSession, ds: Dataset[SourceData]): Dataset[TripSession] = {
       import spark.implicits._
-      ds.withWatermark("createTime", "5 minutes") // 设置水位
-        .groupByKey(event => event.vin)
+      ds.withWatermark("createTime", waterMarkDuration)
+        .groupByKey(_.vin)
         .flatMapGroupsWithState(
           outputMode  = OutputMode.Update(),
           timeoutConf = GroupStateTimeout.EventTimeTimeout()
@@ -25,7 +27,7 @@ object SubTripImpl extends SubTrip {
     val sourceData = source.toArray.sortBy(_.createTime.getTime) // 按时间升序
     // 声明一个数组用于存放划分后的可能的多个行程
     val tripResult: ArrayBuffer[TripSession] = ArrayBuffer[TripSession]()
-    tripResult.clear()
+
     val currentState: Option[TripState] = state.getOption
 
     if (state.hasTimedOut) {
@@ -62,6 +64,8 @@ object SubTripImpl extends SubTrip {
       state.setTimeoutTimestamp(timeoutDuration) // Set the timeout
     }
 
+    println("trip result length", tripResult.size)
+    tripResult.foreach(println(_))
     tripResult.iterator
   }
 
