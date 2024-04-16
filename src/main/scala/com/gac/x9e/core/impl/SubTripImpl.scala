@@ -1,15 +1,15 @@
 package com.gac.x9e.core.impl
 
-import com.gac.x9e.core.NaSubTrip
+import com.gac.x9e.core.SubTrip
 import com.gac.x9e.model.{SourceData, TripState, TripSession}
 import org.apache.spark.sql.streaming.{GroupState, GroupStateTimeout, OutputMode}
 import org.apache.spark.sql.{Dataset, SparkSession}
 import scala.collection.mutable.ArrayBuffer
 
-object NaSubTripImpl extends NaSubTrip {
+object SubTripImpl extends SubTrip {
   override def extract(spark: SparkSession, ds: Dataset[SourceData]): Dataset[TripSession] = {
       import spark.implicits._
-      ds.withWatermark("createTime", "30 seconds") // 设置水位
+      ds.withWatermark("createTime", "5 minutes") // 设置水位
         .groupByKey(event => event.vin)
         .flatMapGroupsWithState(
           outputMode  = OutputMode.Update(),
@@ -17,7 +17,9 @@ object NaSubTripImpl extends NaSubTrip {
         )(func = mappingFunction)
   }
 
-  def mappingFunction(vin: String, source: Iterator[SourceData], state: GroupState[TripState]): Iterator[TripSession] = {
+  private def mappingFunction(vin: String,
+                              source: Iterator[SourceData],
+                              state: GroupState[TripState]): Iterator[TripSession] = {
 
     // 声明一个数组用于存放划分后的可能的多个行程
     val tripResult: ArrayBuffer[TripSession] = ArrayBuffer[TripSession]()
@@ -40,15 +42,18 @@ object NaSubTripImpl extends NaSubTrip {
       )
       state.update(initTripState)
       updateTripState(vin = vin, source = sourceData, state = state, tripResult = tripResult)
-      state.setTimeoutTimestamp(30000) // Set the timeout
+      state.setTimeoutTimestamp(30000L) // Set the timeout
     }
 
     tripResult.iterator
   }
 
-  def updateTripState(vin: String, source: Array[SourceData], state: GroupState[TripState], tripResult: ArrayBuffer[TripSession]): Unit = {
+  private def updateTripState(vin: String,
+                              source: Array[SourceData],
+                              state: GroupState[TripState],
+                              tripResult: ArrayBuffer[TripSession]): Unit = {
     for (s <- source) {
-      if (s.createTime.getTime - state.get.tripEndTime > 5000) { // 超过 5 秒就划分一次会话
+      if (s.createTime.getTime - state.get.tripEndTime > 5000L) { // 超过 5 秒就划分一次会话
         val endTrip = TripSession(
           vin = vin,
           tripStartTime = state.get.tripStartTime,

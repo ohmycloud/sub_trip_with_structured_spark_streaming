@@ -12,7 +12,7 @@ mvn clean package -DskipTests
 
 ```shell
 cd sub_trip_with_structured_spark_streaming
-perl6 fake-streaming.pl6
+raku fake-streaming.raku
 ```
 
 ## 启动 Structured Spark Streaming 程序
@@ -23,7 +23,7 @@ perl6 fake-streaming.pl6
 #!/bin/sh
 
 spark-submit \
-  --class ohmysummer.SubTrip \
+  --class com.gac.x9e.SubTripApp \
   --master local[2] \
   --deploy-mode client \
   --driver-memory 2g \

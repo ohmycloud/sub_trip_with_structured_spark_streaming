@@ -13,7 +13,7 @@ object XS6SubTrip {
     val spark = SparkSession
       .builder
       .master("local[2]")
-      .appName("StructredSessionizationRedux")
+      .appName("Structured Sessionization Redux")
       .getOrCreate()
     spark.sparkContext.setLogLevel("WARN")
     import spark.implicits._

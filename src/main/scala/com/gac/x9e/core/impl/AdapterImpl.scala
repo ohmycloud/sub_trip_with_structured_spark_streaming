@@ -2,7 +2,7 @@ package com.gac.x9e.core.impl
 
 import java.sql.Timestamp
 import com.alibaba.fastjson.JSON
-import com.gac.x9e.core.NaAdapter
+import com.gac.x9e.core.Adapter
 import com.gac.x9e.model.SourceData
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 
@@ -23,11 +23,11 @@ import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
  * 数据适配： val data = JSON.parseObject("{\"vin\":\"LSJA0000000000091\",\"createTime\":1564705982000,\"mileage\":5}")
  * data.getTimestamp("createTime")： java.sql.Timestamp = 2019-08-02 08:33:02.0
  */
-object NaAdapterImpl extends NaAdapter {
+object AdapterImpl extends Adapter {
   override def extract(spark: SparkSession, df: DataFrame): Dataset[SourceData] = {
     import spark.implicits._
     df.as[String]
-      .map{ case line =>
+      .map{ line =>
 
         val data       = JSON.parseObject(line)
         val vin        = data.getString("vin")

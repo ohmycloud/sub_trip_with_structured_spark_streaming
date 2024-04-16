@@ -1,10 +1,10 @@
 package com.gac.x9e.module
 
-import com.gac.x9e.SubTripApplication
+import com.gac.x9e.SubTripApp
 import com.gac.x9e.conf.{KafkaConfiguration, SocketConfiguration, SparkConfiguration}
-import com.gac.x9e.core.{NaAdapter, NaSubTrip}
-import com.gac.x9e.core.impl.{NaAdapterImpl, NaSubTripImpl}
-import com.gac.x9e.pipeline.{NaSource, NaSparkSession}
+import com.gac.x9e.core.{Adapter, SubTrip}
+import com.gac.x9e.core.impl.{AdapterImpl, SubTripImpl}
+import com.gac.x9e.pipeline.{DataSource, WrapperSparkSession}
 import com.google.inject.{AbstractModule, Provides, Singleton}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -13,9 +13,9 @@ object MainModule extends AbstractModule {
     bind(classOf[SparkConfiguration]).asEagerSingleton() // Spark 配置
     bind(classOf[KafkaConfiguration]).asEagerSingleton() // Kafka 配置
 
-    bind(classOf[SubTripApplication])                    // 程序入口
-    bind(classOf[NaAdapter]).toInstance(NaAdapterImpl)   // 国标数据适配
-    bind(classOf[NaSubTrip]).toInstance(NaSubTripImpl)   // 国标行程划分
+    bind(classOf[SubTripApp])                            // 程序入口
+    bind(classOf[Adapter]).toInstance(AdapterImpl)       // 数据适配
+    bind(classOf[SubTrip]).toInstance(SubTripImpl)       // 行程划分
   }
 
   /**
@@ -25,13 +25,13 @@ object MainModule extends AbstractModule {
    */
   @Provides
   @Singleton
-  def NaSparkSession(sparkConf: SparkConfiguration): NaSparkSession[SparkSession] = {
-    new NaSparkSession[SparkSession] {
+  private def wrapperSparkSession(sparkConf: SparkConfiguration): WrapperSparkSession[SparkSession] = {
+    new WrapperSparkSession[SparkSession] {
       override def session(): SparkSession = {
         val sparkConf =  new SparkConfiguration
         SparkSession.builder
           .master(sparkConf.sparkMaster)
-          .appName("subtrip using stateful structured streaming")
+          .appName("sub trip using stateful structured streaming")
           .getOrCreate()
       }
     }
@@ -45,13 +45,13 @@ object MainModule extends AbstractModule {
    */
   @Provides
   @Singleton
-  def NaDataSource(socketConf: SocketConfiguration, sparkConf: SparkConfiguration): NaSource[DataFrame] = {
-    new NaSource[DataFrame] {
+  def dataSource(socketConf: SocketConfiguration, sparkConf: SparkConfiguration): DataSource[DataFrame] = {
+    new DataSource[DataFrame] {
       override def stream(): DataFrame = {
 
         val socketConf = new SocketConfiguration
         val sparkConf  = new SparkConfiguration
-        val spark = NaSparkSession(sparkConf).session()
+        val spark = wrapperSparkSession(sparkConf).session()
 
         spark
           .readStream
