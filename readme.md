@@ -35,3 +35,12 @@ spark-submit \
 ```
 
 观察程序的输出。
+
+- StatefulSessionApp
+
+```bash
+cd sub_trip_with_structured_spark_streaming
+raku last-user.raku
+```
+
+运行 StatefulSessionApp, 观察结果。
