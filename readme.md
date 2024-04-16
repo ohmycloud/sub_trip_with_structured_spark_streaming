@@ -12,7 +12,7 @@ mvn clean package -DskipTests
 
 ```shell
 cd sub_trip_with_structured_spark_streaming
-raku fake-streaming.raku
+raku trips.raku
 ```
 
 ## 启动 Structured Spark Streaming 程序

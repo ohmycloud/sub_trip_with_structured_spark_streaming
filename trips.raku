@@ -14,8 +14,9 @@ sub MAIN(Str :$host = '0.0.0.0', Int :$port = 3333) {
 
                 whenever Supply.interval(1) {
                     next if $ignore;
-                    print sprintf("\{'vin':'%s','createTime':%s,'mileage':%s}\n", $vin, DateTime.now.posix, $last_meter);
-                    $conn.print: sprintf("\{'vin':'%s','createTime':%s,'mileage':%s}\n", $vin, DateTime.now.posix, $last_meter++);
+                    my $now = (DateTime.now.Instant * 1000).Int;
+                    print sprintf("\{'vin':'%s','createTime':%s,'mileage':%s}\n", $vin, $now, $last_meter);
+                    $conn.print: sprintf("\{'vin':'%s','createTime':%s,'mileage':%s}\n", $vin, $now, $last_meter++);
                 }
 
                 whenever signal(SIGINT) {
