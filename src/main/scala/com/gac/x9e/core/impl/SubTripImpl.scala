@@ -27,27 +27,24 @@ object SubTripImpl extends SubTrip {
     val sourceData = source.toArray.sortBy(_.createTime.getTime) // 按时间升序
     // 声明一个数组用于存放划分后的可能的多个行程
     val tripResult: ArrayBuffer[TripSession] = ArrayBuffer[TripSession]()
-
     val currentState: Option[TripState] = state.getOption
 
     if (state.hasTimedOut) {
       println(s"$vin timeout with state: {$currentState}")
       state.remove() // 超时则移除
-      if (currentState.nonEmpty) {
-        val endTrip = TripSession(
-          vin = vin,
-          tripStartTime = currentState.get.tripStartTime,
-          tripEndTime = currentState.get.tripEndTime,
-          startMileage = currentState.get.startMileage,
-          endMileage = currentState.get.endMileage,
-          tripDuration = currentState.get.tripDuration,
-          tripDistance = currentState.get.tripDistance,
-          isTripEnded = true
-        )
-        return List(endTrip).toIterator
-      } else {
-       return None.toIterator
-      }
+
+      for {
+        trip <- state.getOption
+      } yield TripSession(
+        vin = vin,
+        tripStartTime = trip.tripStartTime,
+        tripEndTime = trip.tripEndTime,
+        startMileage = trip.startMileage,
+        endMileage = trip.endMileage,
+        tripDuration = trip.tripDuration,
+        tripDistance = trip.tripDistance,
+        isTripEnded = true
+      )
     } else if (state.exists) { // 状态存在
       updateTripState(vin = vin, source = sourceData, state = state, tripResult = tripResult)
     } else {
@@ -64,8 +61,6 @@ object SubTripImpl extends SubTrip {
       state.setTimeoutTimestamp(timeoutDuration) // Set the timeout
     }
 
-    println("trip result length", tripResult.size)
-    tripResult.foreach(println(_))
     tripResult.iterator
   }
 
