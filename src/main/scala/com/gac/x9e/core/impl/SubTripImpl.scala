@@ -34,12 +34,12 @@ object SubTripImpl extends SubTrip {
       if (currentState.nonEmpty) {
         val endTrip = TripSession(
           vin = vin,
-          tripStartTime = state.get.tripStartTime,
-          tripEndTime = state.get.tripEndTime,
-          startMileage = state.get.startMileage,
-          endMileage = state.get.endMileage,
-          tripDuration = state.get.tripDuration,
-          tripDistance = state.get.tripDistance,
+          tripStartTime = currentState.get.tripStartTime,
+          tripEndTime = currentState.get.tripEndTime,
+          startMileage = currentState.get.startMileage,
+          endMileage = currentState.get.endMileage,
+          tripDuration = currentState.get.tripDuration,
+          tripDistance = currentState.get.tripDistance,
           isTripEnded = true
         )
         return List(endTrip).toIterator
