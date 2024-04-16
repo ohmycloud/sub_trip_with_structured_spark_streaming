@@ -7,6 +7,8 @@ import org.apache.spark.sql.{Dataset, SparkSession}
 import scala.collection.mutable.ArrayBuffer
 
 object SubTripImpl extends SubTrip {
+  private val tripGapDuration = 30 * 1000L // 形成之间的 Gap 时间为 30秒
+  private val timeoutDuration = 30 * 1000L // 超时时间
   override def extract(spark: SparkSession, ds: Dataset[SourceData]): Dataset[TripSession] = {
       import spark.implicits._
       ds.withWatermark("createTime", "5 minutes") // 设置水位
@@ -20,15 +22,30 @@ object SubTripImpl extends SubTrip {
   private def mappingFunction(vin: String,
                               source: Iterator[SourceData],
                               state: GroupState[TripState]): Iterator[TripSession] = {
-
+    val sourceData = source.toArray.sortBy(_.createTime.getTime) // 按时间升序
     // 声明一个数组用于存放划分后的可能的多个行程
     val tripResult: ArrayBuffer[TripSession] = ArrayBuffer[TripSession]()
-
     tripResult.clear()
-    val sourceData = source.toArray.sortBy(_.createTime.getTime) // 按时间升序
+    val currentState: Option[TripState] = state.getOption
 
     if (state.hasTimedOut) {
+      println(s"$vin timeout with state: {$currentState}")
       state.remove() // 超时则移除
+      if (currentState.nonEmpty) {
+        val endTrip = TripSession(
+          vin = vin,
+          tripStartTime = state.get.tripStartTime,
+          tripEndTime = state.get.tripEndTime,
+          startMileage = state.get.startMileage,
+          endMileage = state.get.endMileage,
+          tripDuration = state.get.tripDuration,
+          tripDistance = state.get.tripDistance,
+          isTripEnded = true
+        )
+        return List(endTrip).toIterator
+      } else {
+       return None.toIterator
+      }
     } else if (state.exists) { // 状态存在
       updateTripState(vin = vin, source = sourceData, state = state, tripResult = tripResult)
     } else {
@@ -42,7 +59,7 @@ object SubTripImpl extends SubTrip {
       )
       state.update(initTripState)
       updateTripState(vin = vin, source = sourceData, state = state, tripResult = tripResult)
-      state.setTimeoutTimestamp(30000L) // Set the timeout
+      state.setTimeoutTimestamp(timeoutDuration) // Set the timeout
     }
 
     tripResult.iterator
@@ -53,7 +70,7 @@ object SubTripImpl extends SubTrip {
                               state: GroupState[TripState],
                               tripResult: ArrayBuffer[TripSession]): Unit = {
     for (s <- source) {
-      if (s.createTime.getTime - state.get.tripEndTime > 5000L) { // 超过 5 秒就划分一次会话
+      if (s.createTime.getTime - state.get.tripEndTime > tripGapDuration) { // 超过 Gap 就划分一次会话
         val endTrip = TripSession(
           vin = vin,
           tripStartTime = state.get.tripStartTime,
@@ -62,7 +79,7 @@ object SubTripImpl extends SubTrip {
           endMileage    = state.get.endMileage,
           tripDuration  = state.get.tripDuration,
           tripDistance  = state.get.tripDistance,
-          tripStatus    = 0
+          isTripEnded   = true
         )
 
         tripResult.append(endTrip)

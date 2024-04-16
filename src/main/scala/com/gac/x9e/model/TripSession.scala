@@ -9,7 +9,7 @@ package com.gac.x9e.model
   * @param endMileage    结束里程数
   * @param tripDuration  行驶时长
   * @param tripDistance  行驶距离
-  * @param tripStatus    行程状态
+  * @param isTripEnded   行程状态 true-结束, false-进行中
   */
 case class TripSession(
   vin:               String,
@@ -19,7 +19,7 @@ case class TripSession(
   var endMileage:    Long,
   var tripDuration:  Long,
   var tripDistance:  Long,
-  var tripStatus:    Int
+  var isTripEnded:   Boolean
 )
 
 object TripSession {
