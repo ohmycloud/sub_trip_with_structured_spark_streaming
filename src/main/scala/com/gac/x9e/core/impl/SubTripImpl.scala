@@ -79,11 +79,20 @@ object SubTripImpl extends SubTrip {
     )
   }
 
+  /**
+   * 如果状态没有超时, 则更新状态
+   * @param vin 车架号
+   * @param source 数据源
+   * @param state TripState 车辆行程状态
+   * @param tripResult 车辆行程结果
+   */
   private def updateState(vin: String,
                               source: Array[SourceData],
                               state: GroupState[TripState],
                               tripResult: ArrayBuffer[TripSession]): Unit = {
+    // 如果状态不存在
     if (state.getOption.isEmpty) {
+      println(s"Is state for $vin exists: ", state.exists)
       state.update(initTripState(source.head))   // 用第一条数据初始化一个状态
       state.setTimeoutTimestamp(timeoutDuration) // 设置超时时间
     }
