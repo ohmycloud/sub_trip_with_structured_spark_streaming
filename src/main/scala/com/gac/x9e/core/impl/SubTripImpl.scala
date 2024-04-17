@@ -11,6 +11,12 @@ object SubTripImpl extends SubTrip {
   private val timeoutDuration = 10 * 1000L    // 超时时间
   private val waterMarkDuration = "5 minutes" // 水位
 
+  /**
+   * 行程划分
+   * @param spark SparkSession
+   * @param ds SourceData 数据集
+   * @return TripSession 数据集
+   */
   override def extract(spark: SparkSession, ds: Dataset[SourceData]): Dataset[TripSession] = {
       import spark.implicits._
       ds.withWatermark("createTime", waterMarkDuration)
@@ -21,6 +27,13 @@ object SubTripImpl extends SubTrip {
         )(func = mappingFunction)
   }
 
+  /**
+   *
+   * @param vin 车架号
+   * @param source 数据源
+   * @param state TripState 状态
+   * @return 一组 TripSession
+   */
   private def mappingFunction(vin: String,
                               source: Iterator[SourceData],
                               state: GroupState[TripState]): Iterator[TripSession] = {
@@ -48,6 +61,11 @@ object SubTripImpl extends SubTrip {
     tripResult.iterator
   }
 
+  /**
+   * 用车辆行程数据初始化行程状态
+   * @param s 数据源
+   * @return TripState
+   */
   private def initTripState(s: SourceData): TripState = {
     TripState(
       tripStartTime = s.createTime.getTime,
@@ -57,6 +75,12 @@ object SubTripImpl extends SubTrip {
     )
   }
 
+  /**
+   * 生成行程结束会话
+   * @param vin 车架号
+   * @param t TripState
+   * @return TripSession
+   */
   private def endedTripSession(vin: String, t: TripState): TripSession = {
     TripSession(
       vin = vin,
@@ -70,6 +94,12 @@ object SubTripImpl extends SubTrip {
     )
   }
 
+  /**
+   * 生成新的 TripState, 用于更新
+   * @param s 数据源
+   * @param t TripState
+   * @return 更新后的 TripState
+   */
   private def updateTripState(s: SourceData, t: TripState): TripState = {
     TripState(
       tripStartTime = t.tripStartTime,      // 行程开始时间保持不变
