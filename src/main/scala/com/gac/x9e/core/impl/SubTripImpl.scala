@@ -124,7 +124,7 @@ object SubTripImpl extends SubTrip {
     if (state.getOption.isEmpty) {
       println(s"Is state for $vin exists: ", state.exists)
       state.update(initTripState(source.head))   // 用第一条数据初始化一个状态
-      state.setTimeoutTimestamp(timeoutDuration) // 设置超时时间
+      state.setTimeoutTimestamp(state.getCurrentWatermarkMs() + timeoutDuration) // 设置超时时间
     }
 
     for {
@@ -141,6 +141,7 @@ object SubTripImpl extends SubTrip {
         val updatedTripState = updateTripState(s, tripState)
         state.update(updatedTripState)
       }
+      state.setTimeoutTimestamp(state.getCurrentWatermarkMs() + timeoutDuration) // 设置超时时间
     }
   }
 }
