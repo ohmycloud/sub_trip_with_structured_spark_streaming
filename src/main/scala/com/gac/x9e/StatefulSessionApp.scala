@@ -77,6 +77,7 @@ object StatefulSessionApp extends App {
       .groupByKey(_.id)
       .mapGroupsWithState(GroupStateTimeout.ProcessingTimeTimeout())(updateSessionEvents)
       .flatMap(userSession => userSession)
+
   finishedUserSessionStream
     .writeStream
     .outputMode(OutputMode.Update())
