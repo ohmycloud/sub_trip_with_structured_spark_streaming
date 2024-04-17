@@ -69,7 +69,8 @@ object SubTripImpl extends SubTrip {
                               state: GroupState[TripState],
                               tripResult: ArrayBuffer[TripSession]): Unit = {
     for (s <- source) {
-      if (s.createTime.getTime - state.get.tripEndTime > tripGapDuration) { // 超过 Gap 就划分一次会话
+      // 超过 GapDuration 就划分一次会话
+      if (s.createTime.getTime - state.get.tripEndTime > tripGapDuration) {
         val endTrip = TripSession(
           vin = vin,
           tripStartTime = state.get.tripStartTime,
@@ -91,7 +92,8 @@ object SubTripImpl extends SubTrip {
           endMileage    = s.mileage
         )
         state.update(initTripState)
-      } else { // update
+      } else {
+        // 行程进行中, 更新
         val updateTripState = TripState(
           tripStartTime = state.get.tripStartTime,
           tripEndTime   = s.createTime.getTime,
