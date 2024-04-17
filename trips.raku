@@ -1,6 +1,4 @@
-sub MAIN(Str :$host = '0.0.0.0', Int :$port = 3333, :$file, Int :$interval = 60) {
-
-    my $vin = 'LSJA0000000000091';
+sub MAIN(Str :$vin = 'LSJA0000000000099', Str :$host = '0.0.0.0', Int :$port = 3333, :$file, Int :$interval = 60) {
     my $last_meter = 0;
 
     react {
