@@ -29,6 +29,9 @@ object SubTripImpl extends SubTrip {
     val tripResult: ArrayBuffer[TripSession] = ArrayBuffer[TripSession]()
 
     if (state.hasTimedOut) {
+      // optionally copy a `TripState`,
+      // In the following for-comprehension, currentState maybe a Some(TripState),
+      // after the state been removed.
       val currentState: Option[TripState] = state.getOption
       println(s"$vin timeout with state: {$currentState}")
 
