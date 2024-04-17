@@ -1,12 +1,18 @@
-sub MAIN(Str :$host = '0.0.0.0', Int :$port = 3333) {
-
-    my $id = '1';
+sub MAIN(Str :$id = 'a', Str :$host = '0.0.0.0', Int :$port = 3333, :$file) {
     my $sum = 0;
     my $event-type = 'click';
 
    #  {"eventTime": "2016-01-01 10:02:00" ,"eventType": "click" ,"userId":"1"}
     react {
         whenever IO::Socket::Async.listen($host, $port) -> $conn {
+          if $file.defined {
+              my @lines = $file.IO.lines;
+              for @lines -> $line {
+                  print sprintf("%s\n", $line);
+                  $conn.print: sprintf("%s\n", $line);
+              }
+          }
+
             react {
                 my Bool:D $ignore = True;
 
