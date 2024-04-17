@@ -39,7 +39,7 @@ object SubTripImpl extends SubTrip {
         timeoutTrip = endedTripSession(vin, trip)
       } tripResult.append(timeoutTrip)
     } else {
-      updateTripState(vin = vin, source = sourceData, state = state, tripResult = tripResult)
+      updateState(vin = vin, source = sourceData, state = state, tripResult = tripResult)
     }
 
     tripResult.iterator
@@ -48,9 +48,9 @@ object SubTripImpl extends SubTrip {
   private def initTripState(s: SourceData): TripState = {
     TripState(
       tripStartTime = s.createTime.getTime,
-      tripEndTime = s.createTime.getTime,
-      startMileage = s.mileage,
-      endMileage = s.mileage
+      tripEndTime   = s.createTime.getTime,
+      startMileage  = s.mileage,
+      endMileage    = s.mileage
     )
   }
 
@@ -67,31 +67,37 @@ object SubTripImpl extends SubTrip {
     )
   }
 
-  private def updateTripState(vin: String,
+  private def updateTripState(s: SourceData, t: TripState): TripState = {
+    TripState(
+      tripStartTime = t.tripStartTime,      // 行程开始时间保持不变
+      tripEndTime   = s.createTime.getTime, // 更新行程结束时间
+      startMileage  = t.startMileage,       // 行程开始里程保持不变
+      endMileage    = s.mileage             // 更新行程结束里程
+    )
+  }
+
+  private def updateState(vin: String,
                               source: Array[SourceData],
                               state: GroupState[TripState],
                               tripResult: ArrayBuffer[TripSession]): Unit = {
-    val currentState = state.getOption
-    if (currentState.isEmpty) {
+    if (state.getOption.isEmpty) {
       state.update(initTripState(source.head))   // 用第一条数据初始化一个状态
       state.setTimeoutTimestamp(timeoutDuration) // 设置超时时间
     }
 
-    for (s <- source) {
+    for {
+      s <- source
+      tripState <- state.getOption
+    } {
       // 超过规定的 GapDuration, 结束上一个行程, 并开启下一个行程
-      if (s.createTime.getTime - state.get.tripEndTime > tripGapDuration) {
-        val endTrip = endedTripSession(vin, state.get)
+      if (s.createTime.getTime - tripState.tripEndTime > tripGapDuration) {
+        val endTrip = endedTripSession(vin, tripState)
         tripResult.append(endTrip)
         state.update(initTripState(s)) // 初始化下一个行程
       } else {
         // 行程进行中, 更新 state
-        val updateTripState = TripState(
-          tripStartTime = state.get.tripStartTime, // 行程开始时间保持不变
-          tripEndTime   = s.createTime.getTime,    // 更新行程结束时间
-          startMileage  = state.get.startMileage,  // 行程开始里程保持不变
-          endMileage    = s.mileage                // 更新行程结束里程
-        )
-        state.update(updateTripState)
+        val updatedTripState = updateTripState(s, tripState)
+        state.update(updatedTripState)
       }
     }
   }
