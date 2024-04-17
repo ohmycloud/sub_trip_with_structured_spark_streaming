@@ -8,7 +8,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object SubTripImpl extends SubTrip {
   private val tripGapDuration = 30 * 1000L    // 形成之间的 Gap 时间为 30秒
-  private val timeoutDuration = 30 * 1000L    // 超时时间
+  private val timeoutDuration = 10 * 1000L    // 超时时间
   private val waterMarkDuration = "5 minutes" // 水位
 
   override def extract(spark: SparkSession, ds: Dataset[SourceData]): Dataset[TripSession] = {
@@ -34,17 +34,18 @@ object SubTripImpl extends SubTrip {
       state.remove() // 超时则移除
 
       for {
-        trip <- state.getOption
-      } yield TripSession(
-        vin = vin,
-        tripStartTime = trip.tripStartTime,
-        tripEndTime = trip.tripEndTime,
-        startMileage = trip.startMileage,
-        endMileage = trip.endMileage,
-        tripDuration = trip.tripDuration,
-        tripDistance = trip.tripDistance,
-        isTripEnded = true
-      )
+        trip <- currentState
+        timeoutTrip = TripSession(
+          vin = vin,
+          tripStartTime = trip.tripStartTime,
+          tripEndTime = trip.tripEndTime,
+          startMileage = trip.startMileage,
+          endMileage = trip.endMileage,
+          tripDuration = trip.tripDuration,
+          tripDistance = trip.tripDistance,
+          isTripEnded = true
+        )
+      } tripResult.append(timeoutTrip)
     } else if (state.exists) { // 状态存在
       updateTripState(vin = vin, source = sourceData, state = state, tripResult = tripResult)
     } else {
