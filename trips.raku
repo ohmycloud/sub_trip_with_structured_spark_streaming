@@ -1,4 +1,4 @@
-sub MAIN(Str :$host = '0.0.0.0', Int :$port = 3333, :$file) {
+sub MAIN(Str :$host = '0.0.0.0', Int :$port = 3333, :$file, Int :$interval = 60) {
 
     my $vin = 'LSJA0000000000091';
     my $last_meter = 0;
@@ -15,7 +15,7 @@ sub MAIN(Str :$host = '0.0.0.0', Int :$port = 3333, :$file) {
             react {
                 my Bool:D $ignore = True;
 
-                whenever Supply.interval(60).rotor(1, 1 => 1) {
+                whenever Supply.interval($interval).rotor(1, 1 => 1) {
                     $ignore = !$ignore;
                 }
 

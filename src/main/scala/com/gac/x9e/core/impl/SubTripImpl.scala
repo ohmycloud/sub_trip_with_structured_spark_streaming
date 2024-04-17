@@ -27,10 +27,11 @@ object SubTripImpl extends SubTrip {
     val sourceData = source.toArray.sortBy(_.createTime.getTime) // 按时间升序
     // 声明一个数组用于存放划分后的可能的多个行程
     val tripResult: ArrayBuffer[TripSession] = ArrayBuffer[TripSession]()
-    val currentState: Option[TripState] = state.getOption
 
     if (state.hasTimedOut) {
+      val currentState: Option[TripState] = state.getOption
       println(s"$vin timeout with state: {$currentState}")
+
       state.remove() // 超时则移除
 
       for {

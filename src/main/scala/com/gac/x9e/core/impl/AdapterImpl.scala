@@ -27,15 +27,21 @@ object AdapterImpl extends Adapter {
   override def extract(spark: SparkSession, df: DataFrame): Dataset[SourceData] = {
     import spark.implicits._
     df.as[String]
-      .map{ line =>
+      .map { line =>
 
-        val data       = JSON.parseObject(line)
-        val vin        = data.getString("vin")
-        val createTime = new Timestamp( data.getLong("createTime"))
-        val mileage    = data.getLong("mileage")
+        try {
+          val data = JSON.parseObject(line)
+          val vin = data.getString("vin")
+          val createTime = new Timestamp(data.getLong("createTime"))
+          val mileage = data.getLong("mileage")
 
-        // 将每行数据转换为 SourceData 数据源
-        SourceData(vin, createTime, mileage)
-      }
+          // 将每行数据转换为 SourceData 数据源
+          SourceData(vin, createTime, mileage)
+        } catch {
+          case e: Exception =>
+            println(s"[$line] can't be parsed")
+            SourceData("", new Timestamp(0L), 0L)
+        }
+      }.filter(x => x.vin.nonEmpty)
   }
 }
