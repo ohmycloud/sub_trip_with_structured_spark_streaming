@@ -1,9 +1,9 @@
 package com.gac.x9e.module
 
-import com.gac.x9e.SubTripApp
+import com.gac.x9e.{SubTripApp, TripStatusApp}
 import com.gac.x9e.conf.{KafkaConfiguration, SocketConfiguration, SparkConfiguration}
-import com.gac.x9e.core.{Adapter, SubTrip}
-import com.gac.x9e.core.impl.{AdapterImpl, SubTripImpl}
+import com.gac.x9e.core.{Adapter, SubTrip, TripStatus}
+import com.gac.x9e.core.impl.{AdapterImpl, SubTripImpl, TripStatusImpl}
 import com.gac.x9e.pipeline.{DataSource, WrapperSparkSession}
 import com.google.inject.{AbstractModule, Provides, Singleton}
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -13,9 +13,12 @@ object MainModule extends AbstractModule {
     bind(classOf[SparkConfiguration]).asEagerSingleton() // Spark 配置
     bind(classOf[KafkaConfiguration]).asEagerSingleton() // Kafka 配置
 
-    bind(classOf[SubTripApp])                            // 程序入口
+    bind(classOf[SubTripApp])                            // 行程划分程序入口
     bind(classOf[Adapter]).toInstance(AdapterImpl)       // 数据适配
     bind(classOf[SubTrip]).toInstance(SubTripImpl)       // 行程划分
+
+    bind(classOf[TripStatusApp])                         // 行程状态程序入口
+    bind(classOf[TripStatus]).toInstance(TripStatusImpl) // 行程状态
   }
 
   /**

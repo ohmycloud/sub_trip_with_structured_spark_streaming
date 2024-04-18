@@ -11,3 +11,7 @@ trait Adapter {
 trait SubTrip {
   def extract(spark: SparkSession, ds: Dataset[SourceData]): Dataset[TripSession]
 }
+
+trait TripStatus {
+  def extract(spark: SparkSession, ds: Dataset[SourceData]): Dataset[TripSession]
+}
